@@ -11,10 +11,14 @@ sleep 5
 sudo apt-get update
 sudo apt-get upgrade -y
 
+# Install GPU tools
+echo "Installing Intel GPU tools..."
+sudo apt-get install intel-gpu-tools -y
+
 # Ubuntu server 20.04  Change from netplan to NetworkManager for all interfaces
 echo "Changing netplan to NetowrkManager on all interfaces..."
 sleep 5
-sudo apt-get install network-manager
+sudo apt-get install network-manager -y
 
 echo 'Changing netplan to NetowrkManager on all interfaces'
 # backup existing yaml file
@@ -28,7 +32,6 @@ cat << EOF > /etc/netplan/01-netcfg.yaml
 network:
   version: 2
   renderer: NetworkManager
-  optional: true
 EOF
 
 # Download NordVPN installer
@@ -84,11 +87,11 @@ sleep 5
 # Intall samba
 echo "Preparing to install samba..."
 sleep 5
-dnf install samba samba-common samba-client -y
-echo "Backing up original config file"
+sudo apt-get install install samba samba-common samba-client -y
+echo "Backing up original config file..."
 
-mv /etc/samba/smb.conf /etc/samba/smb.conf.org
-tee /etc/samba/smb.conf <<EOF
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.org
+sudo tee /etc/samba/smb.conf <<EOF
 [global]
   workgroup = WORKGROUP
   server string = Samba Server Version %v
@@ -98,15 +101,30 @@ tee /etc/samba/smb.conf <<EOF
   passdb backend = tdbsam
   wins support = yes
 
-[EXAMPLE]
-  path = /example
+[media_sda1]
+  path = /media_sda1
   available = yes
-  valid users = samba
+  valid users = jcadmin
   readonly = no
   browseable = yes
   public = yes
   writable = yes
-  hosts allow = 192.168.1.0/255.255.255.0, 192.168.0.0/255.255.255.0
+  hosts allow = 192.168.1.0/255.255.255.0
+
+[media_sdb2]
+  path = /media_sdb2
+  available = yes
+  valid users = jcadmin
+  readonly = no
+  browseable = yes
+  public = yes
+  writable = yes
+  hosts allow = 192.168.1.0/255.255.255.0
+EOF
+
+# GPU setup
+sudo tee /etc/modprobe.d/i915.conf << EOF
+options i915 enable_guc=2
 EOF
 
 # Opening ports on Ubuntu firewall
@@ -122,9 +140,16 @@ sudo ufw allow 32400
 
 echo "INSTALLATION COMPLETE!"
 read -p "Portainer can be accessed from https://$IP:9443 and Cockpit from https://$IP:9090 press ENTER exit install!"
+
+# Updated boot img for GPU passthrough
+sudo update-initramfs -u
+sleep 5
+
 # setup netplan for NM
+echo "Generating and applying netplan changes..."
 netplan generate
 netplan apply
+
 # make sure NM is running
 systemctl enable NetworkManager.service
 systemctl restart NetworkManager.service
