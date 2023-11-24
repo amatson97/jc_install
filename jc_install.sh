@@ -81,6 +81,34 @@ sleep 5
 docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
 sleep 5
 
+# Intall samba
+echo "Preparing to install samba..."
+sleep 5
+dnf install samba samba-common samba-client -y
+echo "Backing up original config file"
+
+mv /etc/samba/smb.conf /etc/samba/smb.conf.org
+tee /etc/samba/smb.conf <<EOF
+[global]
+  workgroup = WORKGROUP
+  server string = Samba Server Version %v
+  netbios name = CENTOS
+  security = user
+  security = user
+  passdb backend = tdbsam
+  wins support = yes
+
+[EXAMPLE]
+  path = /example
+  available = yes
+  valid users = samba
+  readonly = no
+  browseable = yes
+  public = yes
+  writable = yes
+  hosts allow = 192.168.1.0/255.255.255.0, 192.168.0.0/255.255.255.0
+EOF
+
 # Opening ports on Ubuntu firewall
 echo "Enable firewall and opening required ports..."
 sleep 5
@@ -88,6 +116,8 @@ sudo ufw enable
 sudo ufw allow 22
 sudo ufw allow 9443
 sudo ufw allow 9090
+sudo ufw allow 139
+sudo ufw allow 445
 sudo ufw allow 32400
 
 echo "INSTALLATION COMPLETE!"
