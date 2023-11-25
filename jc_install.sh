@@ -11,9 +11,54 @@ sleep 5
 sudo apt-get update
 sudo apt-get upgrade -y
 
-# Install GPU tools
+# Install some useful tools
 echo "Installing Intel GPU tools..."
-sudo apt-get install intel-gpu-tools -y
+sudo apt-get install intel-gpu-tools dnsutils htop iputils-ping build-essential -y
+
+# No-ip client
+cd /usr/local/src/
+wget http://www.noip.com/client/linux/noip-duc-linux.tar.gz
+tar xf noip-duc-linux.tar.gz
+cd noip-2.1.9-1/
+make install
+
+echo "Launching no-ip client...you will now be asked to login..."
+sleep 5
+sudo /usr/local/bin/noip2 -C
+
+# Write service bash script
+sudo tee /etc/init.d/noip2.sh << EOF
+#! /bin/sh
+# . /etc/rc.d/init.d/functions # uncomment/modify for your killproc
+case "$1" in
+start)
+echo "Starting noip2."
+/usr/local/bin/noip2
+;;
+stop)
+echo -n "Shutting down noip2."
+killproc -TERM /usr/local/bin/noip2
+;;
+*)
+echo "Usage: $0 {start|stop}"
+exit 1
+esac
+exit 0
+EOF
+
+# Write service file.
+sudo tee << /etc/systemd/system/noip2.service << EOF
+[Unit]
+Description=noip2 service
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/noip2
+Restart=always
+
+[Install]
+WantedBy=default.target
+EOF
 
 # Ubuntu server 20.04  Change from netplan to NetworkManager for all interfaces
 echo "Changing netplan to NetowrkManager on all interfaces..."
