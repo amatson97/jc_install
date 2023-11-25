@@ -47,7 +47,7 @@ exit 0
 EOF
 
 # Write service file.
-sudo tee << /etc/systemd/system/noip2.service << EOF
+sudo tee /etc/systemd/system/noip2.service << EOF
 [Unit]
 Description=noip2 service
 
