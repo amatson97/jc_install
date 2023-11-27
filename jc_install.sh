@@ -165,6 +165,16 @@ sudo tee /etc/samba/smb.conf <<EOF
   public = yes
   writable = yes
   hosts allow = 192.168.1.0/255.255.255.0
+
+[Downloads]
+  path = /home/jcadmin/qbittorrent/downloads
+  available = yes
+  valid users = jcadmin
+  read only = no
+  browseable = yes
+  public = yes
+  writable = yes
+  hosts allow = 192.168.1.0/255.255.255.0
 EOF
 
 # GPU setup
